@@ -1,0 +1,90 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ==========================
+# Virtual Environments
+# ==========================
+venv/
+env/
+ENV/
+.venv/
+
+# ==========================
+# Jupyter Notebook
+# ==========================
+.ipynb_checkpoints/
+
+# ==========================
+# VS Code
+# ==========================
+.vscode/
+
+# ==========================
+# Data Files
+# ==========================
+data/raw/
+data/processed/
+
+# Keep folder structure
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+
+# ==========================
+# Models
+# ==========================
+models/
+!models/.gitkeep
+
+# ==========================
+# Logs
+# ==========================
+logs/
+*.log
+
+# ==========================
+# MLflow
+# ==========================
+mlruns/
+
+# ==========================
+# SHAP Outputs
+# ==========================
+shap_plots/
+feature_importance/
+
+# ==========================
+# Coverage / Testing
+# ==========================
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ==========================
+# Build Files
+# ==========================
+build/
+dist/
+*.egg-info/
+
+# ==========================
+# Operating System Files
+# ==========================
+.DS_Store
+Thumbs.db
+
+# ==========================
+# Environment Variables
+# ==========================
+.env
+.env.*
+
+# ==========================
+# Temporary Files
+# ==========================
+*.tmp
+*.bak
+*.swp
