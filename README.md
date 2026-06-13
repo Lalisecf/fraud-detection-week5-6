@@ -101,12 +101,14 @@ fraud-detection-week5-6/
 │   ├── eda-fraud-data.ipynb
 │   ├── eda-creditcard.ipynb
 │   ├── feature-engineering.ipynb
-│
+│   ├── modeling.ipynb
+│ 
 ├── src/
 │
 ├── tests/
 │
 ├── models/
+│    └── best_fraud_model.pkl
 │
 ├── scripts/
 │
@@ -383,15 +385,6 @@ Fraudulent transactions represent approximately 0.17% of all observations.
 
 This severe imbalance requires special handling during model training.
 
----
-
-## Planned Resampling Strategy
-
-For Task 2:
-
-* SMOTE (Synthetic Minority Over-sampling Technique) will be applied.
-* Resampling will be performed only on the training set.
-* Test data will remain untouched to prevent data leakage.
 
 ---
 
@@ -423,17 +416,260 @@ Accuracy will not be used as the primary metric due to class imbalance.
 
 ---
 
-# Next Steps (Task 2)
+# Task 2: Model Building and Training
 
-The next phase will focus on:
+## Train-Test Split
 
-* Train-Test Split
-* SMOTE Resampling
-* Logistic Regression Baseline Model
-* Random Forest / XGBoost Model
-* Model Comparison
-* Cross-Validation
-* Performance Evaluation
+The fraud dataset was divided into training and testing subsets using a stratified split to preserve the original class distribution.
+
+```python
+train_test_split(
+    X,
+    y,
+    test_size=0.2,
+    random_state=42,
+    stratify=y
+)
+```
+
+This ensures that both the training and testing datasets contain representative proportions of fraudulent and legitimate transactions.
+
+---
+
+## Handling Class Imbalance with SMOTE
+
+To address class imbalance, Synthetic Minority Over-sampling Technique (SMOTE) was applied only to the training data.
+
+### Class Distribution Before SMOTE
+
+| Class          | Count  |
+| -------------- | ------ |
+| Legitimate (0) | 93,502 |
+| Fraud (1)      | 9,814  |
+
+### Class Distribution After SMOTE
+
+| Class          | Count  |
+| -------------- | ------ |
+| Legitimate (0) | 93,502 |
+| Fraud (1)      | 93,502 |
+
+SMOTE generated synthetic fraud examples until both classes contained an equal number of observations.
+
+Applying SMOTE only to the training set prevented data leakage and ensured realistic evaluation on unseen data.
+
+---
+
+## Baseline Model: Logistic Regression
+
+A Logistic Regression classifier was trained as the baseline model.
+
+### Model Configuration
+
+```python
+LogisticRegression(
+    max_iter=1000,
+    random_state=42
+)
+```
+
+### Evaluation Results
+
+#### F1-Score
+
+**0.167**
+
+#### AUC-PR
+
+**0.096**
+
+#### Confusion Matrix
+
+| Actual / Predicted | Legitimate (0) | Fraud (1) |
+| ------------------ | -------------- | --------- |
+| Legitimate (0)     | 10,673         | 12,703    |
+| Fraud (1)          | 1,074          | 1,380     |
+
+### Interpretation
+
+Although Logistic Regression detected approximately 56% of fraud cases, it generated a very large number of false positives. The model exhibited low precision and weak discrimination capability, making it unsuitable as a final fraud detection solution.
+
+---
+
+## Ensemble Model: Random Forest
+
+A Random Forest classifier was trained to capture more complex fraud patterns.
+
+### Baseline Configuration
+
+```python
+RandomForestClassifier(
+    random_state=42
+)
+```
+
+Random Forest was selected because it can model nonlinear relationships, handle feature interactions, and reduce overfitting through ensemble learning.
+
+---
+
+## Hyperparameter Tuning
+
+Grid Search with 3-fold cross-validation was performed.
+
+### Parameter Grid
+
+```python
+param_grid = {
+    'n_estimators':[100,200],
+    'max_depth':[5,10,None],
+    'min_samples_split':[2,5]
+}
+```
+
+### Best Parameters
+
+```python
+{
+    'max_depth': None,
+    'min_samples_split': 2,
+    'n_estimators': 200
+}
+```
+
+The optimal model consisted of 200 trees with unrestricted depth and a minimum split size of 2.
+
+---
+
+## Random Forest Evaluation
+
+### F1-Score
+
+**0.677**
+
+### AUC-PR
+
+**0.707**
+
+### Confusion Matrix
+
+| Actual / Predicted | Legitimate (0) | Fraud (1) |
+| ------------------ | -------------- | --------- |
+| Legitimate (0)     | 23,030         | 346       |
+| Fraud (1)          | 1,022          | 1,432     |
+
+### Interpretation
+
+The Random Forest model substantially outperformed Logistic Regression.
+
+Key improvements:
+
+* Significantly higher F1-Score
+* Much stronger Precision-Recall performance
+* Dramatic reduction in false positives
+* Better fraud detection capability
+
+The model successfully balanced fraud detection effectiveness with prediction reliability.
+
+---
+
+## Stratified K-Fold Cross-Validation
+
+To evaluate model stability and generalization performance, 5-fold Stratified Cross-Validation was performed.
+
+### Logistic Regression
+
+| Metric             | Value |
+| ------------------ | ----- |
+| Mean F1-Score      | 0.529 |
+| Standard Deviation | 0.025 |
+
+### Random Forest
+
+| Metric             | Value |
+| ------------------ | ----- |
+| Mean F1-Score      | 0.958 |
+| Standard Deviation | 0.001 |
+
+### Interpretation
+
+The Random Forest model demonstrated both superior predictive performance and exceptional consistency across validation folds.
+
+The extremely low standard deviation indicates that the model generalizes well and is not highly sensitive to training data variations.
+
+---
+
+## Model Comparison
+
+| Model               | F1-Score | AUC-PR |
+| ------------------- | -------- | ------ |
+| Logistic Regression | 0.167    | 0.096  |
+| Random Forest       | 0.677    | 0.707  |
+
+### Cross-Validation Comparison
+
+| Model               | Mean F1-Score | Standard Deviation |
+| ------------------- | ------------- | ------------------ |
+| Logistic Regression | 0.529         | 0.025              |
+| Random Forest       | 0.958         | 0.001              |
+
+---
+
+## Final Model Selection
+
+The optimized Random Forest model was selected as the final fraud detection model.
+
+Reasons for selection:
+
+* Highest F1-Score (0.677)
+* Highest AUC-PR (0.707)
+* Lowest false positive rate
+* Strong fraud detection capability
+* Excellent cross-validation performance
+* Highly stable across validation folds
+
+The Random Forest model significantly outperformed the Logistic Regression baseline and provides the most reliable solution for fraud detection.
+
+---
+
+# Interim-2 Deliverables Completed
+
+✅ Train-Test Split
+
+✅ SMOTE Resampling
+
+✅ Logistic Regression Baseline
+
+✅ Random Forest Model
+
+✅ Hyperparameter Tuning
+
+✅ F1-Score Evaluation
+
+✅ AUC-PR Evaluation
+
+✅ Confusion Matrix Analysis
+
+✅ Stratified Cross-Validation
+
+✅ Model Comparison
+
+✅ Final Model Selection
+
+---
+
+# Next Steps (Task 3)
+
+The next phase of the project will focus on model explainability and business interpretation.
+
+Planned activities include:
+
+* SHAP Explainability Analysis
+* Global Feature Importance
+* Local Prediction Explanations
+* Fraud Pattern Interpretation
+* Business Recommendations
+* Final Report Preparation
+
 
 ---
 
