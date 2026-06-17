@@ -102,6 +102,7 @@ fraud-detection-week5-6/
 │   ├── eda-creditcard.ipynb
 │   ├── feature-engineering.ipynb
 │   ├── modeling.ipynb
+│   ├── shap-explainability.ipynb
 │ 
 ├── src/
 │
@@ -657,21 +658,235 @@ The Random Forest model significantly outperformed the Logistic Regression basel
 
 ---
 
-# Next Steps (Task 3)
+# Task 3: Model Explainability (SHAP)
 
-The next phase of the project will focus on model explainability and business interpretation.
+## Objective
 
-Planned activities include:
-
-* SHAP Explainability Analysis
-* Global Feature Importance
-* Local Prediction Explanations
-* Fraud Pattern Interpretation
-* Business Recommendations
-* Final Report Preparation
-
+The objective of Task 3 was to interpret the best-performing fraud detection model using SHAP (SHapley Additive exPlanations) and translate model insights into actionable business recommendations.
 
 ---
+
+## Feature Importance Analysis
+
+### Random Forest Feature Importance
+
+The top features identified by the Random Forest model were:
+
+| Rank | Feature |
+|--------|----------|
+| 1 | device_frequency |
+| 2 | time_since_signup |
+| 3 | ip_address |
+| 4 | lower_bound_ip_address |
+| 5 | upper_bound_ip_address |
+| 6 | age |
+| 7 | purchase_value |
+| 8 | user_id |
+| 9 | hour_of_day |
+| 10 | source_Direct |
+
+### Key Observation
+
+The model relies heavily on behavioral indicators, particularly:
+
+- Device activity
+- Account age
+- Geolocation information
+- Transaction characteristics
+
+---
+
+## SHAP Global Feature Importance
+
+SHAP analysis was performed to provide model transparency and explain how individual features influence fraud predictions.
+
+### Top SHAP Features
+
+| Rank | SHAP Feature |
+|--------|-------------|
+| 1 | device_frequency |
+| 2 | time_since_signup |
+| 3 | source_Direct |
+| 4 | source_SEO |
+| 5 | sex_M |
+| 6 | browser_IE |
+| 7 | browser_FireFox |
+| 8 | browser_Safari |
+| 9 | country_United States |
+| 10 | hour_of_day |
+
+### SHAP Summary Plot Findings
+
+The SHAP Summary Plot revealed that:
+
+- High **device_frequency** strongly increases fraud probability.
+- Transactions occurring shortly after signup (**time_since_signup**) are more likely to be fraudulent.
+- Traffic sources such as **Direct** and **SEO** contribute significantly to fraud predictions.
+- Browser-related features contain useful fraud signals.
+- Geographic information contributes additional predictive power.
+- Demographic and timing variables have lower overall influence.
+
+---
+
+## Comparison: Random Forest vs SHAP
+
+| Rank | Random Forest Importance | SHAP Importance |
+|------|-------------------------|-----------------|
+| 1 | device_frequency | device_frequency |
+| 2 | time_since_signup | time_since_signup |
+| 3 | ip_address | source_Direct |
+| 4 | lower_bound_ip_address | source_SEO |
+| 5 | upper_bound_ip_address | sex_M |
+| 6 | age | browser_IE |
+| 7 | purchase_value | browser_FireFox |
+| 8 | user_id | browser_Safari |
+| 9 | hour_of_day | country_United States |
+| 10 | source_Direct | hour_of_day |
+
+### Interpretation
+
+Both methods consistently identified:
+
+1. **device_frequency**
+2. **time_since_signup**
+
+as the strongest predictors of fraud.
+
+SHAP provided more interpretable insights by explaining not only feature importance but also how specific feature values increased or decreased fraud risk.
+
+---
+
+## SHAP Force Plot Analysis
+
+### True Positive (Correct Fraud Detection)
+
+**Prediction Score:** ~0.97
+
+The model correctly classified the transaction as fraudulent.
+
+Key fraud-driving features:
+
+- device_frequency = 3.131
+- time_since_signup = -1.574
+- browser_FireFox = 1
+
+These features strongly pushed the prediction toward fraud, demonstrating that the model successfully identified suspicious behavioral patterns.
+
+### Business Insight
+
+Fraudulent transactions are frequently associated with:
+
+- High device activity
+- Recently created accounts
+- Specific browser patterns
+
+---
+
+### False Positive (Legitimate Transaction Flagged as Fraud)
+
+**Prediction Score:** ~0.51
+
+The model incorrectly classified a legitimate transaction as fraudulent.
+
+Features increasing fraud risk:
+
+- sex_M = 1
+- source_Direct = 1
+- device_frequency = 0.1169
+
+Features reducing fraud risk:
+
+- time_since_signup = -0.1538
+- source_SEO = 0
+- hour_of_day = 0
+
+### Business Insight
+
+This transaction was close to the classification threshold. Fraud indicators slightly outweighed legitimate signals, highlighting the trade-off between fraud prevention and customer experience.
+
+---
+
+### False Negative (Missed Fraud)
+
+**Prediction Score:** ~0.05
+
+The model incorrectly classified a fraudulent transaction as legitimate.
+
+Features pushing toward legitimate behavior:
+
+- device_frequency = -0.2599
+- time_since_signup = 1.165
+- purchase_value = -1.1
+- source_SEO = 0
+
+Feature increasing fraud risk:
+
+- browser_FireFox = 1
+
+### Business Insight
+
+This fraud case closely resembled normal customer behavior, making detection difficult. Sophisticated fraudsters may intentionally mimic legitimate users to evade detection.
+
+---
+
+## Business Recommendations
+
+### Recommendation 1: Monitor High Device Activity
+
+**Evidence:** Device frequency was the most important feature in both Random Forest and SHAP analyses.
+
+Implement automated alerts and risk scoring for devices generating unusually high transaction volumes.
+
+---
+
+### Recommendation 2: Apply Additional Verification to New Accounts
+
+**Evidence:** Time since signup was consistently among the strongest fraud predictors.
+
+Require multi-factor authentication (MFA) or transaction verification for purchases occurring shortly after account creation.
+
+---
+
+### Recommendation 3: Monitor Traffic Sources
+
+**Evidence:** source_Direct and source_SEO were among the most influential SHAP features.
+
+Assign dynamic risk scores to traffic channels and continuously monitor suspicious acquisition sources.
+
+---
+
+### Recommendation 4: Use Browser-Based Risk Signals
+
+**Evidence:** Browser features (Firefox, IE, Safari) contributed significantly to fraud predictions.
+
+Include browser fingerprints as part of a broader fraud risk assessment framework.
+
+---
+
+### Recommendation 5: Review Borderline Predictions
+
+**Evidence:** The False Positive case received a fraud score of approximately 0.51.
+
+Introduce secondary verification or manual review for transactions with fraud probabilities near the decision threshold.
+
+---
+
+### Recommendation 6: Improve Detection of Sophisticated Fraud
+
+**Evidence:** The False Negative transaction closely resembled legitimate customer behavior.
+
+Enhance future models with:
+
+- Transaction velocity metrics
+- Historical spending behavior
+- Device fingerprinting
+- User behavioral profiling
+
+---
+
+## Conclusion
+
+SHAP analysis confirmed that fraud detection is primarily driven by behavioral indicators rather than demographic characteristics. Device activity, account age, traffic source, browser type, and geolocation information were the strongest fraud signals. These insights provide transparency into model decisions and support the development of targeted fraud prevention strategies.
 
 # Technologies Used
 
